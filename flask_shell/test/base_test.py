@@ -34,6 +34,7 @@ class BaseTest(TestCase):
     def setUp(self):
         """Create the tables for testing, and create a token for writing."""
         DB.create_all()
+        self.header_dict = {}
 
     def tearDown(self):
         """Delete the database, clearing all the data."""
@@ -48,15 +49,11 @@ class BaseTest(TestCase):
             success returns a 200
             result object is the same as the database data
             bad routes raise a bad request, 400
-            archived values do not appear
         :param route: string, base path of the route
         :param db_object: SQLAlchemy.database.model, object the get queries
         :param ignore: list, keys not returned from the get
         :return: None
         """
-        response_no_header = self.client.get('%s/42' % route)
-        self.assert403(response_no_header, 'get should require a token')
-
         self.add_obj_to_db([db_object])
 
         response = self.client.get('%s/1' % route,
@@ -73,12 +70,6 @@ class BaseTest(TestCase):
         response = self.client.get('%s/42' % route, headers=self.header_dict)
         self.assert404(response, 'non existent route should return 404')
 
-        db_object.archive = True
-        DB.session.commit()
-        DB.session.refresh(db_object)
-
-        response = self.client.get('%s/1' % route, headers=self.header_dict)
-        self.assert404(response, 'archived values should not return')
 
     def default_get_all(self, route, object_list):
         """
@@ -88,14 +79,10 @@ class BaseTest(TestCase):
             200 result even if no data
             response 200 when data exists
             number of objects in a response match the number in the database
-            archived values do not return in the get all
         :param route: String, path to the route.
         :param object_list: list of database entires to add to the database.
         :return: None
         """
-        response_no_header = self.client.get(route)
-        self.assert403(response_no_header, 'get should require a token')
-
         response_empty = self.client.get(route, headers=self.header_dict)
         self.assert200(response_empty,
                        'even an emptry respones should return values')
@@ -106,15 +93,6 @@ class BaseTest(TestCase):
         self.assert200(response, 'getting values should return a 200')
         self.assertEqual(len(response.json), len(object_list),
                          'get not returning all values')
-
-        object_list[0].archive = True
-        DB.session.commit()
-
-        response_archive = self.client.get(route, headers=self.header_dict)
-        self.assert200(response_archive,
-                       'should get 200 even when archived values')
-        self.assertEqual(len(response_archive.json), len(object_list) - 1,
-                         'get seems to return archived values')
 
     # pylint: disable=R0913
     def default_put(self, route, payload, db_obj, table, ignore=None):
@@ -136,8 +114,6 @@ class BaseTest(TestCase):
         :param ignore: dict, values that should not get updated during a put.
         :return: None
         """
-        response_no_header = self.client.put('%s/42' % route)
-        self.assert403(response_no_header, 'post should require a token')
 
         self.add_obj_to_db([db_obj])
 
@@ -190,7 +166,6 @@ class BaseTest(TestCase):
         Test a post route, ensuring the value is added to the database.
 
         Tests include:
-            400 if no token
             400 if no data
             201 if value entered
             value is in the database
@@ -202,8 +177,6 @@ class BaseTest(TestCase):
         :param ignore: dict, values that should not get updated during a post.
         :return: None
         """
-        response_no_header = self.client.post(route)
-        self.assert403(response_no_header, 'post should require a token')
 
         response_no_data = self.client.post(route,
                                             headers=self.header_dict)
@@ -238,20 +211,16 @@ class BaseTest(TestCase):
         Tests include:
             400 if no token
             400 if object not in database
-            204 when archive successful
-            value is actually archived after running
         :param route: String, path to the route
         :param db_object: SQLAlchemy.database.model, database value getting
                         deleted.
         :return: None
         """
-        response_no_header = self.client.delete('%s/42' % route)
-        self.assert403(response_no_header, 'delete should require a token')
 
         response_empty = self.client.delete('%s/42' % route,
                                             headers=self.header_dict)
         self.assert404(response_empty, 'requesting a bad id should fail')
-
+        raise NotImplementedError('please write your own delete tests')
         DB.session.add(db_object)
         DB.session.commit()
         DB.session.refresh(db_object)
@@ -260,9 +229,7 @@ class BaseTest(TestCase):
                                              headers=self.header_dict)
         self.assertEqual(response_delete.status_code, 204,
                          'delete should return a 204')
-        DB.session.refresh(db_object)
-        self.assertTrue(db_object.archive, 'entry should be archived')
-
+        
     def compare_object(self, response_dict, db_dict):
         """
         Compare values in response.json and the database values.

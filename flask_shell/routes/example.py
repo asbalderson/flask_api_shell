@@ -17,14 +17,14 @@ BPHandler.add_blueprint(EXAMPLE_BP)
 @EXAMPLE_BP.route('/example/<int:example_id>', methods=['GET'])
 def get_example(example_id):
     """Add a single answer to the database."""
-    example = Example.query(id=example_id).first()
+    example = Example.query.filter_by(primary_key=example_id).first()
     if not example:
         raise NotFound('could not find value from example table')
     return make_response(jsonify(table2dict(example)), 200)
 
 
-@EXAMPLE_BP.route('/example/<int:example_id>', methods=['POST'])
-def post_example(example_id):
+@EXAMPLE_BP.route('/example', methods=['POST'])
+def post_example():
     payload = get_payload(request)
 
     #should do value checking here

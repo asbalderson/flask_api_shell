@@ -56,7 +56,7 @@ def setup_logging(debug=False, verbose=False):
     log_dir = '/opt/example'
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    file_name = os.path.join(log_dir, 'example.log')
+    file_name = os.path.join(log_dir, 'exam.log')
     logger.setLevel(logging.WARNING)
     if debug:
         logger.setLevel(logging.DEBUG)

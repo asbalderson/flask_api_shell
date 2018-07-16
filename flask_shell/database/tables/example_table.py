@@ -3,9 +3,6 @@ from .. import DB
 
 
 class Example(DB.Model):
-    """
-
-    """
 
     __tablename__ = 'example'
     primary_key = DB.Column(DB.Integer, nullable=False, primary_key=True)

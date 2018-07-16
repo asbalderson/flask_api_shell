@@ -1,10 +1,9 @@
-"""Test all routes for Answer creation, modification, and query."""
+"""Test all routes for data creation, modification, and query."""
 
 import datetime
 
 from .base_test import BaseTest
 
-from ..database import DB
 from ..database.tables.example_table import Example
 
 
@@ -24,21 +23,19 @@ class TestAnswer(BaseTest):
         BaseTest.tearDown(self)
 
     def test_get_example(self):
-        """Test the route for querying a single answer."""
-        example = Example(text='text',
+        """Test the route for querying a single database value."""
+        example = Example(string='text',
                           boolean=False,
-                          intger=1,
-                          date=datetime.datetime.utcnow())
-        self.default_get('example', example)
+                          integer=1)
+        self.default_get('/example', example)
 
     def test_add_example(self):
-        """Test the route for creating an answer."""
-        payload = {'text': 'text',
+        """Test the route for creating a database value."""
+        payload = {'string': 'text',
                    'boolean': False,
-                   'integer': 1,
-                   'date': datetime.datetime.utcnow()}
+                   'integer': 1}
 
-        self.default_post('answer',
+        self.default_post('example',
                           payload,
                           Example,
                           [])
